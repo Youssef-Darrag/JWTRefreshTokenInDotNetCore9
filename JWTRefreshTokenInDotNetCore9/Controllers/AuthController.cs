@@ -53,6 +53,21 @@ namespace JWTRefreshTokenInDotNetCore9.Controllers
             return Ok(dto);
         }
 
+        [HttpGet("refreshToken")]
+        public async Task<IActionResult> RefreshTokenAsync()
+        {
+            var refreshToken = Request.Cookies["refreshToken"];
+
+            var result = await _authService.RefreshTokenAsync(refreshToken!);
+
+            if (!result.IsAuthenticated)
+                return BadRequest(result.Message);
+
+            SetRefreshTokenInCookie(result.RefreshToken!, result.RefreshTokenExpiration);
+
+            return Ok(result);
+        }
+
         private void SetRefreshTokenInCookie(string refreshToken, DateTime expires)
         {
             var cookieOptions = new CookieOptions
