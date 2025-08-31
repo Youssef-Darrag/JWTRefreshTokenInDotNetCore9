@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace JWTRefreshTokenInDotNetCore9.Services
@@ -65,23 +66,43 @@ namespace JWTRefreshTokenInDotNetCore9.Services
 
         public async Task<AuthDto> GetTokenAsync(TokenRequestDto dto)
         {
+            var authDto = new AuthDto();
+
             var user = await _userManager.FindByEmailAsync(dto.Email);
 
             if (user is null || !await _userManager.CheckPasswordAsync(user, dto.Password))
-                return new AuthDto { Message = "Email or Password is incorrect!" };
+            {
+                authDto.Message = "Email or Password is incorrect!";
+                return authDto;
+            }
 
             var jwtSecurityToken = await CreateJwtToken(user);
             var rolesList = await _userManager.GetRolesAsync(user);
 
-            return new AuthDto
+
+            authDto.IsAuthenticated = true;
+            authDto.Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
+            authDto.Email = user.Email;
+            authDto.UserName = user.UserName;
+            //authDto.ExpiresOn = jwtSecurityToken.ValidTo;
+            authDto.Roles = rolesList.ToList();
+
+            if (user.RefreshTokens.Any(t => t.IsActive))
             {
-                IsAuthenticated = true,
-                Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken),
-                Email = user.Email!,
-                UserName = user.UserName!,
-                //ExpiresOn = jwtSecurityToken.ValidTo,
-                Roles = rolesList.ToList()
-            };
+                var activeRefreshToken = user.RefreshTokens.FirstOrDefault(t => t.IsActive);
+                authDto.RefreshToken = activeRefreshToken.Token;
+                authDto.RefreshTokenExpiration = activeRefreshToken.ExpiresOn;
+            }
+            else
+            {
+                var refreshToken = GenerateRefreshToken();
+                authDto.RefreshToken = refreshToken.Token;
+                authDto.RefreshTokenExpiration = refreshToken.ExpiresOn;
+                user.RefreshTokens.Add(refreshToken);
+                await _userManager.UpdateAsync(user);
+            }
+
+            return authDto;
         }
 
         public async Task<string> AddRoleAsync(AddRoleDto dto)
@@ -129,6 +150,22 @@ namespace JWTRefreshTokenInDotNetCore9.Services
                 signingCredentials: signingCredentials);
 
             return jwtSecurityToken;
+        }
+
+        private RefreshToken GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+
+            using var rng = RandomNumberGenerator.Create();
+
+            rng.GetBytes(randomNumber);
+
+            return new RefreshToken
+            {
+                Token = Convert.ToBase64String(randomNumber),
+                ExpiresOn = DateTime.UtcNow.AddDays(10),
+                CreatedOn = DateTime.UtcNow
+            };
         }
     }
 }

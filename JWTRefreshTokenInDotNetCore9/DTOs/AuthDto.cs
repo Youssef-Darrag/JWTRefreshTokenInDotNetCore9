@@ -14,6 +14,6 @@ namespace JWTRefreshTokenInDotNetCore9.DTOs
 
         [JsonIgnore]
         public string? RefreshToken { get; set; }
-        public DateTime? RefreshTokenExpiration { get; set; }
+        public DateTime RefreshTokenExpiration { get; set; }
     }
 }
