@@ -55,7 +55,7 @@ namespace JWTRefreshTokenInDotNetCore9.Services
             return new AuthDto
             {
                 Email = user.Email,
-                ExpiresOn = jwtSecurityToken.ValidTo,
+                //ExpiresOn = jwtSecurityToken.ValidTo,
                 IsAuthenticated = true,
                 Roles = new List<string> { "User" },
                 Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken),
@@ -79,7 +79,7 @@ namespace JWTRefreshTokenInDotNetCore9.Services
                 Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken),
                 Email = user.Email!,
                 UserName = user.UserName!,
-                ExpiresOn = jwtSecurityToken.ValidTo,
+                //ExpiresOn = jwtSecurityToken.ValidTo,
                 Roles = rolesList.ToList()
             };
         }

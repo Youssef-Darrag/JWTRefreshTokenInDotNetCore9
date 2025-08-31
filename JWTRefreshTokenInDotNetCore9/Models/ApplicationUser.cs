@@ -10,5 +10,7 @@ namespace JWTRefreshTokenInDotNetCore9.Models
 
         [MaxLength(50)]
         public string LastName { get; set; } = default!;
+
+        public List<RefreshToken>? RefreshTokens { get; set; }
     }
 }
