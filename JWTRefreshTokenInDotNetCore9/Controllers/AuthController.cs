@@ -68,6 +68,22 @@ namespace JWTRefreshTokenInDotNetCore9.Controllers
             return Ok(result);
         }
 
+        [HttpPost("revokeToken")]
+        public async Task<IActionResult> RevokeTokenAsync([FromBody] RevokeTokenDto dto)
+        {
+            var token = dto.Token ?? Request.Cookies["refreshToken"];
+
+            if (string.IsNullOrEmpty(token))
+                return BadRequest("Token is required!");
+
+            var result = await _authService.RevokeTokenAsync(token);
+
+            if (!result)
+                return BadRequest("Token is invalid!");
+
+            return Ok();
+        }
+
         private void SetRefreshTokenInCookie(string refreshToken, DateTime expires)
         {
             var cookieOptions = new CookieOptions
