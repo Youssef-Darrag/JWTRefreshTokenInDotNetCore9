@@ -23,6 +23,8 @@ namespace JWTRefreshTokenInDotNetCore9.Controllers
             if (!result.IsAuthenticated)
                 return BadRequest(result.Message);
 
+            SetRefreshTokenInCookie(result.RefreshToken!, result.RefreshTokenExpiration);
+
             return Ok(result);
         }
 

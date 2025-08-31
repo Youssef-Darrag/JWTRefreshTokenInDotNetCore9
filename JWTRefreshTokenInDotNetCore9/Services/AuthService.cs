@@ -53,6 +53,10 @@ namespace JWTRefreshTokenInDotNetCore9.Services
 
             var jwtSecurityToken = await CreateJwtToken(user);
 
+            var refreshToken = GenerateRefreshToken();
+            user.RefreshTokens?.Add(refreshToken);
+            await _userManager.UpdateAsync(user);
+
             return new AuthDto
             {
                 Email = user.Email,
@@ -60,7 +64,9 @@ namespace JWTRefreshTokenInDotNetCore9.Services
                 IsAuthenticated = true,
                 Roles = new List<string> { "User" },
                 Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken),
-                UserName = user.UserName
+                UserName = user.UserName,
+                RefreshToken = refreshToken.Token,
+                RefreshTokenExpiration = refreshToken.ExpiresOn
             };
         }
 
@@ -87,10 +93,10 @@ namespace JWTRefreshTokenInDotNetCore9.Services
             //authDto.ExpiresOn = jwtSecurityToken.ValidTo;
             authDto.Roles = rolesList.ToList();
 
-            if (user.RefreshTokens.Any(t => t.IsActive))
+            if (user.RefreshTokens!.Any(t => t.IsActive))
             {
-                var activeRefreshToken = user.RefreshTokens.FirstOrDefault(t => t.IsActive);
-                authDto.RefreshToken = activeRefreshToken.Token;
+                var activeRefreshToken = user.RefreshTokens!.FirstOrDefault(t => t.IsActive);
+                authDto.RefreshToken = activeRefreshToken!.Token;
                 authDto.RefreshTokenExpiration = activeRefreshToken.ExpiresOn;
             }
             else
@@ -98,7 +104,7 @@ namespace JWTRefreshTokenInDotNetCore9.Services
                 var refreshToken = GenerateRefreshToken();
                 authDto.RefreshToken = refreshToken.Token;
                 authDto.RefreshTokenExpiration = refreshToken.ExpiresOn;
-                user.RefreshTokens.Add(refreshToken);
+                user.RefreshTokens!.Add(refreshToken);
                 await _userManager.UpdateAsync(user);
             }
 
